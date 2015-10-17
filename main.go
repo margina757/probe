@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"probe/probe"
 )
 
 func main() {
-	fmt.Println("Lonfile Probe")
+	probe.AllInterface()
 }
