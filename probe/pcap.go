@@ -1,11 +1,13 @@
 package probe
 
 import (
+	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"io"
 	"log"
+	"net"
 	"sync"
 )
 
@@ -16,6 +18,7 @@ var (
 	pcapOnce     sync.Once
 	chanICMP     chan incomePacket
 	chanSYNACK   chan incomePacket
+	en0          *pcap.Handle
 )
 
 type ifaceHandle_t struct {
@@ -59,22 +62,14 @@ func getIfaceHandle(iface string) (handle *pcap.Handle) {
 	}
 	return nil
 }
-func openAllInterface(ifaces []string) (err error) {
-	// for _, iface := range ifaces {
-	// 	handle, err := pcap.OpenLive(iface, 128, false, pcap.BlockForever)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	go doReadPacket(handle)
-	// }
-
-	iff, _ := pcap.FindAllDevs()
-	for _, ifa := range iff {
-		log.Println(ifa.Name)
-		handle, err := pcap.OpenLive(ifa.Name, 128, false, pcap.BlockForever)
+func openAllInterface(ifaces []net.Interface) (err error) {
+	for _, iface := range ifaces {
+		fmt.Println("Open interface", iface.Name)
+		handle, err := pcap.OpenLive(iface.Name, 128, false, pcap.BlockForever)
 		if err != nil {
 			return err
 		}
+		en0 = handle
 		go doReadPacket(handle)
 	}
 

@@ -1,42 +1,48 @@
 package probe
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"probe/probe/iface"
+	"time"
 )
 
 var (
 	allActiveInterface []net.Interface
 	allActiveIP        []*net.IPAddr
 	allDisactiveIP     []*net.IPAddr
+
+	chanSend chan *socketData
+	pid      uint16
 )
 
 func Start() {
 	var err error
+
 	pcapInit()
 
 	allActiveInterface, allActiveIP, allDisactiveIP, err = iface.AllInterface()
 	if err != nil {
 		log.Println(err)
+		return
+	}
+	err = openAllInterface(allActiveInterface)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-}
-
-func printInterface() {
-	fmt.Println("Active Interface:", len(allActiveInterface))
-	for _, iface := range allActiveInterface {
-		fmt.Println(iface.Name)
+	err = openSendConn()
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	fmt.Println("Active IP:", len(allActiveIP))
-	for _, ip := range allActiveIP {
-		fmt.Println(ip.String())
+	err = ping()
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	fmt.Println("Disactive IP:", len(allActiveIP))
-	for _, ip := range allDisactiveIP {
-		fmt.Println(ip.String())
-	}
+	time.Sleep(1 * time.Second)
 }

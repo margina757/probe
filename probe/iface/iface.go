@@ -24,6 +24,8 @@ func AllInterface() (ifaces []net.Interface, active []*net.IPAddr, disactive []*
 		return ifaces, active, disactive, err
 	}
 
+	fmt.Println("Checking Network Connection")
+	count := 0
 	for _, iface := range allifaces {
 		addThisInterface := false
 		addrs := addrsOfOneInterface(iface)
@@ -37,6 +39,7 @@ func AllInterface() (ifaces []net.Interface, active []*net.IPAddr, disactive []*
 			if alive {
 				addThisInterface = true
 				allIPAddr = append(allIPAddr, addr)
+				count++
 			} else {
 				disactive = append(disactive, addr)
 			}
@@ -46,6 +49,9 @@ func AllInterface() (ifaces []net.Interface, active []*net.IPAddr, disactive []*
 			allIface = append(allIface, iface)
 		}
 	}
+
+	fmt.Printf("There have %d IP(s) connected to network\n\n", count)
+
 	return allIface, allIPAddr, disactive, nil
 }
 
