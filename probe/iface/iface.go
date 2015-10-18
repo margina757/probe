@@ -92,6 +92,7 @@ func checkConnection(laddr string) bool {
 
 	ping1, e := Ping(laddr, outIP1, timeout)
 	if ping1 {
+		fmt.Println("OK")
 		return true
 	} else {
 		if ne, ok := e.(net.Error); ok && ne.Timeout() {
@@ -103,6 +104,7 @@ func checkConnection(laddr string) bool {
 
 	ping2, e := Ping(laddr, outIP2, timeout)
 	if ping2 {
+		fmt.Println("OK")
 		return true
 	} else {
 		if ne, ok := e.(net.Error); ok && ne.Timeout() {
