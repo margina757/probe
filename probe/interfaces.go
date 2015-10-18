@@ -1,6 +1,7 @@
 package probe
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
@@ -15,14 +16,27 @@ const (
 	outIP2 = "8.8.8.8"
 )
 
+var (
+	allIface  []string
+	allIPAddr []*net.IPAddr
+)
+
 func AllInterface() {
 	ifaces, _ := allInterface()
+
 	for _, iface := range ifaces {
 		addrs := addrsOfOneInterface(iface)
+		if len(addrs) <= 0 {
+			continue
+		}
+		allIface = append(allIface, iface.Name)
 		for _, addr := range addrs {
-			log.Println(addr)
+			allIPAddr = append(allIPAddr, addr)
 		}
 	}
+
+	fmt.Println("All Interface ", allIface)
+	fmt.Println("All IP ", allIPAddr)
 }
 
 /* 所有网卡
