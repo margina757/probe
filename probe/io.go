@@ -31,12 +31,13 @@ func openSendConn() error {
 		return e
 	}
 
-	f := os.NewFile(uintptr(s), "xxxx")
-	sendf = f
+	// f := os.NewFile(uintptr(s), "xxxx")
+	// sendf = f
 
-	packetSend, e = net.FilePacketConn(f)
-	packetSend.LocalAddr()
-
+	packetSend, e = net.ListenPacket("ip", "0.0.0.0")
+	if e != nil {
+		fmt.Println(e)
+	}
 	chanSend = make(chan *socketData, 1024)
 	go doSend(s)
 	return nil
@@ -65,7 +66,7 @@ func doSend(conn int) {
 	}
 }
 
-func sendbyte(p []byte) error {
+func writebyte(p []byte) error {
 	to := syscall.SockaddrInet4{}
 	to.Port = 0
 	to.Addr[0] = 8
@@ -73,6 +74,9 @@ func sendbyte(p []byte) error {
 	to.Addr[2] = 8
 	to.Addr[3] = 8
 	_, e := syscall.Write(fd, p)
+	if e != nil {
+		fmt.Println(e)
+	}
 	return e
 
 }
@@ -86,4 +90,12 @@ func sendto(data []byte) {
 		fmt.Println(e)
 	}
 
+}
+
+func sendConn(data []byte) {
+	addr, _ := net.ResolveIPAddr("ip", "8.8.8.8")
+	_, e := packetSend.WriteTo(data, addr)
+	if e != nil {
+		fmt.Println(e)
+	}
 }

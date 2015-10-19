@@ -10,7 +10,7 @@ import (
 func ping() error {
 
 	ip := &layers.IPv4{}
-	ip.SrcIP = net.IP{192, 168, 199, 138}
+	ip.SrcIP = net.IP{192, 168, 1, 1}
 	ip.DstIP = net.IP{8, 8, 8, 8}
 	ip.Version = 4
 	ip.Protocol = layers.IPProtocolTCP
@@ -37,7 +37,7 @@ func ping() error {
 	fmt.Printf("%+v\n", ipp)
 	// addr, _ := net.ResolveIPAddr("ip4", "8.8.8.8")
 	data := buf.Bytes()
-	sendto(data)
+	writebyte(data)
 
 	return nil
 
