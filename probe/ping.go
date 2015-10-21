@@ -1,44 +1,90 @@
 package probe
 
 import (
-	"fmt"
+	"encoding/binary"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"log"
 	"net"
+	"sync"
+	"time"
 )
 
-func ping() error {
+var (
+	pingLock sync.Mutex
+)
 
+const (
+	icmpSeqOffset = 0xff00
+	icmpSeqPing   = 0x0
+	icmpSeqTrace  = 0x0100
+)
+
+func nping(srcIP, destIP []*net.IPAddr) error {
+
+	pingLock.Lock()
+	defer pingLock.Unlock()
+
+	for _, src := range srcIP {
+		for _, dest := range destIP {
+			for {
+				data := newIcmpData(src, dest, layers.ICMPv4TypeEchoRequest, 0, 64)
+				chanSend <- &socketData{data, dest}
+				time.Sleep(1 * time.Second)
+			}
+		}
+	}
+
+	return nil
+}
+
+func newIcmpData(src, dest *net.IPAddr, typeCode, offSet, ttl int) (data []byte) {
 	ip := &layers.IPv4{}
-	ip.SrcIP = net.IP{192, 168, 1, 1}
-	ip.DstIP = net.IP{8, 8, 8, 8}
 	ip.Version = 4
-	ip.Protocol = layers.IPProtocolTCP
+	ip.Protocol = layers.IPProtocolICMPv4
+	ip.SrcIP = src.IP
+	ip.DstIP = dest.IP
 	ip.Length = 20
+	ip.TTL = uint8(ttl)
 
-	buf := gopacket.NewSerializeBuffer()
+	icmp := &layers.ICMPv4{}
+	icmp.TypeCode = layers.ICMPv4TypeCode(uint16(typeCode) << 8)
+	icmp.Id = pid
+	icmp.Seq = 1
+	icmp.Checksum = 0
 
 	opts := gopacket.SerializeOptions{}
 	opts.ComputeChecksums = true
-	// opts.FixLengths = true
+	opts.FixLengths = true
 
-	eth := &layers.Ethernet{}
-	eth.Length = 14
-	eth.SerializeTo(buf, opts)
+	now := time.Now().UnixNano()
+	var payload = make([]byte, 8)
+	binary.LittleEndian.PutUint64(payload, uint64(now))
 
-	// gopacket.SerializableLayer(buf, opts, &layers.Ethernet{})
-	gopacket.SerializeLayers(buf, opts, ip)
-	// chanSend <- &socketData{buf.Bytes(), net.IP{8, 8, 8, 8}}
+	buf := gopacket.NewSerializeBuffer()
+	gopacket.SerializeLayers(buf, opts, ip, icmp, gopacket.Payload(payload))
 
-	pkt := gopacket.NewPacket(buf.Bytes(), layers.LayerTypeIPv4, gopacket.Default)
-	iplayer := pkt.Layer(layers.LayerTypeIPv4)
-	ipp, _ := iplayer.(*layers.IPv4)
-	fmt.Println(ip)
-	fmt.Printf("%+v\n", ipp)
-	// addr, _ := net.ResolveIPAddr("ip4", "8.8.8.8")
-	data := buf.Bytes()
-	writebyte(data)
+	return buf.Bytes()
+}
 
-	return nil
+func onRecvICMP(pkt gopacket.Packet, icmp *layers.ICMPv4, ci *gopacket.CaptureInfo) {
+	offset := icmp.Seq & icmpSeqOffset
+	switch {
+	case icmp.Id == pid && offset == 0:
+		onRecvPing(pkt, icmp, ci)
+	default:
+	}
+}
 
+func onRecvPing(pkt gopacket.Packet, icmp *layers.ICMPv4, ci *gopacket.CaptureInfo) {
+	payload := icmp.Payload
+	if payload == nil || len(payload) <= 0 {
+		return
+	}
+	sendStamp := binary.LittleEndian.Uint64(payload)
+	if sendStamp < 1000000 {
+		return
+	}
+	delay := ci.Timestamp.UnixNano() - int64(sendStamp)
+	log.Println(pkt.NetworkLayer().NetworkFlow(), delay/1000000)
 }

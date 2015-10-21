@@ -1,10 +1,9 @@
 package probe
 
 import (
-	"log"
+	"github.com/google/gopacket/layers"
 	"net"
 	"probe/probe/iface"
-	"time"
 )
 
 var (
@@ -22,27 +21,39 @@ func Start() {
 	pcapInit()
 
 	allActiveInterface, allActiveIP, allDisactiveIP, err = iface.AllInterface()
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	checkError(err)
+
 	err = openAllInterface(allActiveInterface)
-	if err != nil {
-		log.Println(err)
+	checkError(err)
+
+	err = openSendThread()
+	checkError(err)
+
+	destIP := make([]*net.IPAddr, 0)
+	dest, _ := net.ResolveIPAddr("ip", "114.114.114.114")
+	destIP = append(destIP, dest)
+
+	go nping(allActiveIP, destIP)
+	for {
+		select {
+		case icmp := <-chanICMP:
+			onICMP(icmp)
+		case synACK := <-chanSYNACK:
+			onSYNACK(synACK)
+		}
+	}
+}
+
+func onICMP(data incomePacket) {
+	pkt := data.packet
+	icmpLayer := pkt.Layer(layers.LayerTypeICMPv4)
+	if icmpLayer == nil {
 		return
 	}
+	icmp, _ := icmpLayer.(*layers.ICMPv4)
+	onRecvICMP(pkt, icmp, data.ci)
+}
 
-	err = openSendConn()
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func onSYNACK(synACK incomePacket) {
 
-	err = ping()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	time.Sleep(1 * time.Second)
 }
