@@ -6,6 +6,8 @@ import (
 	"github.com/google/gopacket/layers"
 	"log"
 	"net"
+	"probe/db"
+	"probe/internal/types"
 	"sync"
 	"time"
 )
@@ -86,5 +88,12 @@ func onRecvPing(pkt gopacket.Packet, icmp *layers.ICMPv4, ci *gopacket.CaptureIn
 		return
 	}
 	delay := ci.Timestamp.UnixNano() - int64(sendStamp)
-	log.Println(pkt.NetworkLayer().NetworkFlow(), delay/1000000)
+
+	probeResult := &types.ProbeResult{}
+	probeResult.Src = pkt.NetworkLayer().NetworkFlow().Dst().Raw()
+	probeResult.Dest = pkt.NetworkLayer().NetworkFlow().Src().Raw()
+	probeResult.Delay = int(delay / 1000)
+	probeResult.Stamp = ci.Timestamp.Unix()
+	probeResult.Type = types.ProbeTypePing
+	db.InsertProbeResult(probeResult)
 }
