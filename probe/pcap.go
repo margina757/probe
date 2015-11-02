@@ -1,7 +1,6 @@
 package probe
 
 import (
-	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
@@ -64,7 +63,7 @@ func getIfaceHandle(iface string) (handle *pcap.Handle) {
 }
 func openAllInterface(ifaces []net.Interface) (err error) {
 	for _, iface := range ifaces {
-		fmt.Println("Open interface", iface.Name)
+		log.Println("Open interface", iface.Name)
 		handle, err := pcap.OpenLive(iface.Name, 128, false, pcap.BlockForever)
 		if err != nil {
 			return err

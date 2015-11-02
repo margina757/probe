@@ -35,14 +35,14 @@ func init() {
 OPenSQL打开SQLite数据库并创建一个线程等待数据库操作。
 */
 func OpenDB() error {
-
+	log.Println("========== SQLite Check ==========")
 	openDB()
 	e := initTables()
 	if e != nil {
 		log.Println(e)
 		return e
 	}
-	log.Println("Database table check ok")
+	log.Println("Database tables and indices check finished\n")
 
 	wg.Add(1)
 	go doDB()

@@ -8,9 +8,11 @@ type DestHost struct {
 }
 
 type ProbeResult struct {
-	Src   []byte
-	Dest  []byte
-	Delay int
-	Stamp int64
-	Type  int
+	Src        []byte
+	Dest       []byte
+	Delay      int
+	Stamp      int64
+	Type       int
+	SrcString  string
+	DestString string
 }

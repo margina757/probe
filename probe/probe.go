@@ -2,6 +2,7 @@ package probe
 
 import (
 	"github.com/google/gopacket/layers"
+	"log"
 	"net"
 	"probe/probe/iface"
 )
@@ -34,6 +35,11 @@ func Start() {
 	destIP = append(destIP, dest)
 
 	go nping(allActiveIP, destIP)
+
+	log.Println("Network connection check finished\n")
+
+	log.Println("Probe started")
+
 	for {
 		select {
 		case icmp := <-chanICMP:

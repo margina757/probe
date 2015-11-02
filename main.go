@@ -10,9 +10,10 @@ import (
 )
 
 func main() {
-	db.OpenDB()
+
 	checkOS()
 	fmt.Println("\nLonlife Network Delay Probe Program\n")
+	db.OpenDB()
 	probe.Start()
 }
 

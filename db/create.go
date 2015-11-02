@@ -12,59 +12,71 @@ const (
     stamp INTEGER,
     probe_type    INTEGER)`
 
-	sqlCreateProbeResultsIndex = `CREATE INDEX i_probe_results ON probe_results (dest_ip ,stamp DESC)`
+	sqlProbeResultsDestIndex = `CREATE INDEX i_probe_results_dest ON probe_results (dest_ip ,stamp DESC)`
+	sqlPorbeResultStampIndex = `CREATE INDEX i_probe_results_stamp ON probe_results (stamp DESC)`
 )
 
 func initTables() error {
-	err := checkProbeResultsTable()
+	err := checkTable("probe_results", sqlCreateProbeResults)
+	if err != nil {
+		return err
+	}
+
+	err = checkIndex("i_probe_results_dest", sqlProbeResultsDestIndex)
+	if err != nil {
+		return err
+	}
+
+	err = checkIndex("i_probe_results_stamp", sqlPorbeResultStampIndex)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func checkTable(table string) (exist bool, err error) {
+func checkTable(name, sql string) (err error) {
 	stmt, err := db.Prepare("select name from sqlite_master where name =? and type = 'table'")
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer stmt.Close()
-	rows, err := stmt.Query(table)
+	rows, err := stmt.Query(name)
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer rows.Close()
 	if rows.Next() {
-		return true, nil
-	} else {
-		return false, nil
+		log.Println("Database table", name, "ok")
+		return nil
 	}
-}
 
-func createTable(sql string) (err error) {
 	_, err = db.Exec(sql)
+
+	if err == nil {
+		log.Println("Database table", name, "created")
+	}
 	return err
 }
-func checkProbeResultsTable() error {
-	exist, err := checkTable(tProbeResults)
+
+func checkIndex(name, sql string) error {
+	stmt, err := db.Prepare("select name from sqlite_master where name =? and type = 'index'")
 	if err != nil {
 		return err
 	}
-	if !exist {
-		err = createTable(sqlCreateProbeResults)
-		if err != nil {
-			return err
-		}
-		log.Println("Database table probe_results created")
-		err = createTable(sqlCreateProbeResultsIndex)
-		if err == nil {
-			log.Println("Database index i_probe_results created")
-		}
+	defer stmt.Close()
+	rows, err := stmt.Query(name)
+	if err != nil {
 		return err
 	}
-	return nil
-}
+	defer rows.Close()
+	if rows.Next() {
+		log.Println("Database index", name, "ok")
+		return nil
+	}
 
-func createProbeResultsTable() error {
-	return nil
+	_, err = db.Exec(sql)
+	if err == nil {
+		log.Println("Database index", name, "created")
+	}
+	return err
 }

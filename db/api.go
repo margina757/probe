@@ -7,3 +7,7 @@ import (
 func InsertProbeResult(result *types.ProbeResult) {
 	chanProbeResult <- result
 }
+
+func QueryProbeResultsByDest(dests []*string) {
+
+}

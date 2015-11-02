@@ -1,7 +1,7 @@
 package iface
 
 import (
-	"fmt"
+	"log"
 	"net"
 )
 
@@ -24,7 +24,7 @@ func AllInterface() (ifaces []net.Interface, active []*net.IPAddr, disactive []*
 		return ifaces, active, disactive, err
 	}
 
-	fmt.Println("Checking Network Connection")
+	log.Println("========== Network Connection Check ==========")
 	count := 0
 	for _, iface := range allifaces {
 		addThisInterface := false
@@ -50,7 +50,7 @@ func AllInterface() (ifaces []net.Interface, active []*net.IPAddr, disactive []*
 		}
 	}
 
-	fmt.Printf("There have %d IP(s) connected to network\n\n", count)
+	log.Printf("There have %d IP(s) connected to network", count)
 
 	return allIface, allIPAddr, disactive, nil
 }
@@ -94,30 +94,28 @@ func addrsOfOneInterface(iface net.Interface) (addrs []*net.IPAddr) {
 
 func checkConnection(laddr string) bool {
 
-	fmt.Print("Testing ", laddr, ": ")
-
 	ping1, e := Ping(laddr, outIP1, timeout)
 	if ping1 {
-		fmt.Println("OK")
+		log.Println(laddr, "OK")
 		return true
 	} else {
 		if ne, ok := e.(net.Error); ok && ne.Timeout() {
 		} else {
-			fmt.Println("Error", e)
+			log.Println(laddr, "Error", e)
 			return false
 		}
 	}
 
 	ping2, e := Ping(laddr, outIP2, timeout)
 	if ping2 {
-		fmt.Println("OK")
+		log.Println(laddr, "OK")
 		return true
 	} else {
 		if ne, ok := e.(net.Error); ok && ne.Timeout() {
-			fmt.Println("Time Out")
+			log.Println(laddr, "Time Out")
 			return false
 		} else {
-			fmt.Println("Error", e)
+			log.Println(laddr, "Error", e)
 			return false
 		}
 	}
